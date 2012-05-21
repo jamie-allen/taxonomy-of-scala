@@ -1,0 +1,431 @@
+!SLIDE title-page
+
+## A Taxonomy of Scala
+
+Jamie Allen
+
+@jamie_allen
+
+StrangeLoop 2012
+
+<img src="typesafe-logo-081111.png" class="illustration" note="final slash needed"/>
+
+!SLIDE transition=blindY
+# How Coding in Scala Makes Me Feel
+
+<img src="snufflin.jpg" class="illustration" note="final slash needed"/>
+
+!SLIDE bullets incremental transition=blindY
+# How I Program
+
+* Pre-Scala: Make it work, make it work well, make it work fast
+* With Scala: Make it work AND work well, make it work fast
+
+!SLIDE transition=blindY
+# Not a Getting Started Talk
+.notes That's boring as all get out.  And you can read it in any one of a number of blog posts.  
+
+* What does Scala give you?
+* Simple examples of cool stuff you can do
+
+!SLIDE transition=blindY
+# Major Language Features of Scala
+
+* Object Oriented
+* Case Classes and Pattern Matching
+* Functional Programming
+* Type Theory
+* Actors
+* Java Interoperability
+* Implicits
+* Category Theory
+
+!SLIDE transition=blindY
+# Object Oriented Features
+.notes Everything is an object.
+
+!SLIDE transition=blindY
+# Case Classes
+.notes DTOs done right, all class parameters are immutable, cannot be extended, equals() and hashCode() with no annoyance
+
+	case class Person(firstName: String, lastName: String)
+
+!SLIDE transition=blindY
+# Default Parameter Values and Named Parameters
+
+    case class Person(val fName: String = "Jamie", val lName: String = "Allen")
+
+    val jamieAllen = new Person // jamieAllen: Person = Person(Jamie,Allen)
+    val jamieDoe = new Person(lName = "Doe") // jamieDoe: Person = Person(Jamie,Doe)
+
+!SLIDE transition=blindY
+# By-Name Parameters
+.notes By-name parameters are evaluated every time they are referenced within the method they are passed to.
+
+	def doSomething(t: => Long) = {
+		println(t)
+		println(t)
+	}
+
+	// TODO: Use better example
+
+!SLIDE transition=blindY
+# Lazy Definition
+.notes Laziness is good for reducing initial instantiation time, reducing initial footprint, resolve ordering issues. But there is a cost in a guard field and synchronization, ensuring it is created when necessary.
+
+	lazy val calculatedValue = (some big, expensive calcuation)
+
+!SLIDE transition=blindY
+# Imports
+.notes Can be anywhere in a class, embedded in code, allow for selecting multiple classes from a package, aliasing
+
+	import scala.collection.immutable.Map
+
+	class Person(val fName: String, val lName: String) {
+  		import scala.collection.mutable.{Map => MMap}
+  		val cars: MMap[String, String] = MMap()
+  		...
+	}
+
+!SLIDE transition=blindY
+# Objects
+.notes Singletons within a JVM, no private constructor histrionics, Companion Objects, used for factories and constants
+
+	object Person {
+		def createJamieAllen = new Person("Jamie", "Allen")
+		def createJamieDoe = new Person("Jamie", "Doe")
+
+		val aConstantValue = "A constant value"
+	}
+
+    class Person(val fName: String, val lName: String)
+
+!SLIDE transition=blindY
+# Tuples
+.notes Binds you to an implementation, very fragile.  But useful.  Great way to group values without a DTO.  How to return multiple values, but wrapped in a single object instance.
+
+	case class Person(name: String)
+	val (num: Int, person: Person) = (1, Person(fName = "Phil"))
+
+!SLIDE transition=blindY
+# Pattern Matching
+
+* One of my favorite Scala constructs
+* Case statements on steroids
+* Falls through to first complete match
+
+!SLIDE transition=blindY
+# Pattern Matching
+.notes Note that variable and wildcard are in conflict here. Use more specific cases first
+
+    name match {
+    	case "Lisa" => println("Found Lisa") // Constant
+		case Person("Bob") => println("Found Bob") // Constructor
+		case "Karen" | "Michelle" => println("Found Karen or Michelle") // Or (?)
+		case Seq("Dave", "John") => println("Got Dave before John") // Sequence
+		case Seq("Dave", "John", _*) => println("Got Dave before John") // Sequence
+    	case ("Susan", "Steve") => println("Got Susan and Steve") // Tuple
+		case x: Int if x > 5 => println("got a value greater than 5: " + x) // Type, guard
+    	case x => println("Got something that wasn't an Int: " + x) // Variable
+    	case _ => println("Not found") // Wildcard
+    }
+
+!SLIDE transition=blindY
+# Exception Handling
+.notes Again, use more specific cases first in the match
+
+    try { 
+        // ... 
+    } catch {
+        case iae: IllegalArgumentException => ... 
+        case e: Exception => ...
+    }
+
+!SLIDE transition=blindY
+# Functional Programming
+
+* Very powerful programming paradigm
+* Inverts imperative logic - apply your idempotent function to your data
+
+!SLIDE transition=blindY
+# Immutability
+
+* How many times have you been bitten by someone altering the contents of your collection?
+* Extends beyond marking instances final, you must not leak mutability
+
+!SLIDE transition=blindY
+# How Inadvertent Mutation Makes Me Feel
+
+<img src="wtf_husky.jpg" class="illustration" note="final slash needed"/>
+
+!SLIDE transition=blindY
+# Referential Transparency
+
+* An expression is transparent if it can be replaced by its VALUE without changing the behavior of the program
+* In math, all functions are referentially transparent
+
+!SLIDE transition=blindY
+# Referential Transparency vs. Opacity
+
+	// Transparent
+	val example1 = "jamie".reverse
+	val example2 = example1.reverse
+	println(example1 + example2) // eimajjamie
+
+	// Opaque
+	val example1 = new StringBuffer("Jamie").reverse
+	val example2 = example1.reverse
+	println(example1 append example2) // jamiejamie
+	
+!SLIDE transition=blindY
+# Collections
+
+* Immutable and Mutable
+* Rich implementations, extremely flexible
+	* Map
+	* Set
+	* Sequence
+	* List
+	* Vector
+
+!SLIDE transition=blindY
+# Higher Order Functions
+.notes Applying lambdas to collections.  Function literals, function values.  Convert methods into functions. head/tail on linear sequences and lists.
+
+	val numbers = 1 to 20 // Range(1, 2, 3, ... 20)
+
+	numbers.map(_ + 1) // Vector(2, 3, 4, ... 21)
+	numbers.filter(_ < 5) // Vector(1, 2, 3, 4)
+	numbers.head // Int = 1
+	numbers.tail // Range(2, 3, 4, ... 20)
+	numbers.take(5) // Range(1, 2, 3, 4, 5)
+	numbers.drop(5) // Range(6, 7, 8, ... 20)
+
+!SLIDE transition=blindY
+# groupBy
+	
+	numbers.groupBy(_ % 3)
+
+	Map(
+		1 -> Vector(1, 4, 7, 10, 13, 16, 19), 
+		2 -> Vector(2, 5, 8, 11, 14, 17, 20), 
+		0 -> Vector(3, 6, 9, 12, 15, 18)
+	)
+
+!SLIDE transition=blindY
+# flatMap
+	
+	val names = List("Barb", "Phil", "Pat")
+	names map { _.toUpperCase } // List(BARB, PHIL, PAT)
+	names flatMap { _.toUpperCase } // List(B, A, R, B, P, H, I, L, P, A, T)
+
+!SLIDE transition=blindY
+# fold and reduce
+
+    val sum = numbers.foldLeft(0)((acc, currentVal) => acc + currentVal)
+
+    sum: Int = 210
+
+
+
+    val reduced = numbers reduce (_ + _)
+
+    reduced: Int = 210
+
+!SLIDE transition=blindY
+# Partial Functions
+
+	// TODO
+
+!SLIDE transition=blindY
+# Parser Combinators
+.notes A higher-order function that takes another function as input
+
+	// TODO
+
+!SLIDE transition=blindY
+# Currying
+.notes Take a function that takes 2 parameters (Product), and curry it to create a new function that only takes one parameter (Doubler).  We "fix" a value and use it to apply a specific implementation of a product with semantic value.  Functions are automatically curry-able in ML and Haskell, but have to be defined explicitly as such in Scala.  Note the _ is what explicitly marks this as curried.
+
+	def product(i: Int)(j: Int) = i * j // product: (i: Int)(j: Int)Int
+	val doubler = product(2)_ // doubler: Int => Int = <function1>
+	doubler(3) // Int = 6
+	doubler(4) // Int = 8
+
+	val tripler = product(3)_ // tripler: Int => Int = <function1>
+	tripler(4) // Int = 12
+	tripler(5) // Int = 15
+
+!SLIDE transition=blindY
+# Function Types
+.notes lambdas & closures defined without binding to a definition
+
+    (x: Int) => x + 1 // Function literal
+	val doubler: Int => Int = _ * 2 // Function types	
+
+!SLIDE transition=blindY
+# Type Theory
+
+!SLIDE transition=blindY
+# Type Inference
+.notes Still a good idea to show types on public interfaces, though
+
+* You don't have to specify a type when declaring a variable/value
+* You don't have to specify return types of methods/functions
+* Local versus Global, as you would have in ML (see [Daniel Spiewak's ETE 2011 talk](http://chariotsolutions.com))
+
+!SLIDE transition=blindY
+# Cool Type Tricks
+.notes path dependent is specifying an instance on which that type must exist. Projections are across all instances of that type
+
+	// Path dependent types 
+    foo.Bar
+
+	// Type projections
+    Foo#Bar 
+
+    // Structural types
+	def loadProperties(propertyHolder: { def getProperties():Properties })
+
+!SLIDE transition=blindY
+# Type Constraints
+.notes Covariance is substitute a type with its parent type - expecting mammal will take cat.  Contravariance is substituting a type with its child type - expecting cat will take mammal.  A Function object in Scala is covariant on return type and contravariant on argument type.	  
+
+* Upper bounds (supertyping restrictions)
+* Lower bounds (subtyping restrictions)
+* Covariance and Contravariance
+
+!SLIDE transition=blindY
+# Higher Kinded Types 
+.notes Like higher order functions from earlier took another function to make a new function, use types to create new types
+
+* Use other types to construct a new type
+* Also called type constructors 
+
+!SLIDE transition=blindY
+# Type Lambdas 
+.notes I want to establish a pattern here, wait until we get to functional programming
+
+* Just like function lambdas
+* Define a type dynamically in code without binding
+
+!SLIDE transition=blindY
+# Algebraic Data Types
+
+	// TODO
+
+!SLIDE transition=blindY
+# Actors
+
+* Erlang/OTP
+* Akka will replace language actors
+* Concurrency paradigm using networks of independent objects that can (should) only communicate via messaging
+* Example later
+
+!SLIDE transition=blindY
+# Java Interoperability
+
+* Pretty easy to call Java from Scala
+* Much more difficult to call Scala from Java, due to how you reference idiomatic concepts
+* If you must access Scala from Java, use an abstraction layer like OSGi eventing or a message queue
+
+!SLIDE transition=blindY
+# Implicits
+
+* At compilation time, looks for definitions that will fix type incompatibility
+* Exist in other languages, like C type coercion
+
+!SLIDE transition=blindY
+# Implicits Are Voodoo!
+
+* Do not use them until you understand them
+* Limit scope as much as possible ([Josh Suereth's NE Scala 2011 talk](http://nescala.org/2011/))
+* Modern IDEs will warn you with an underline
+
+<img src="double_facepalm.jpg" class="illustration" note="final slash needed"/>
+
+!SLIDE transition=blindY
+# Implicit Parameters
+
+	// TODO
+
+!SLIDE transition=blindY
+# Category Theory
+.notes Makes many of us feel like idiots because we don't know what these so-called academics are talking about, annoys the academic types because they feel like "Java Joe" won't take the time to learn what they're doing
+
+<img src="triple_facepalm.jpg" class="illustration" note="final slash needed"/>
+
+!SLIDE transition=blindY
+# Category Theory
+.notes Morphism is chewy brownie to a hard brownie, functor would convert a brownie to a cookie, and a chewy brownie to a chewy cookie and hard brownie into hard cookie, but also chewy cookies into hard cookies just like the brownie because the morphism is preserved.
+
+* Concepts (types) and Arrows (functions to convert concepts from one to another) 
+* Morphisms change one value in a category to another in the same category, from one type to another where types are the category
+* Functors are transformations from one category to another that can also transform/preserve morphisms
+
+!SLIDE transition=blindY
+# Monads 
+.notes like a collection with flatMap. you won't know what they are by looking at code at first. Monads are ephemeral - they have to meet the laws of monads.
+
+* Just something that can be flattened 
+* Combine functor applications because they can be bound together
+
+!SLIDE transition=blindY
+# Option/Either
+.notes No more NPEs
+
+* Option allows you to replace null with None, meaning you can ignore the value in your higher-order functions
+* Either is a unified type of either an error condition on the left or a correct value on the right
+
+!SLIDE transition=blindY
+# Is Scala too complex?
+.notes You tell me.  I think not.  You can start by using Scala as a DSL for Java and make your code more concise, more readable and more correct.  As your abilities with the language grows, try expanding what you're doing, but keep in mind your limitations.
+
+* Is the language trying to support too many paradigms at the expense of usability?
+* Should a language be responsible for providing convention as well as capability?
+
+!SLIDE transition=blindY
+# Loading Data to Be Processed
+
+	object DataProcessor {
+	  import scala.collection.mutable.{MultiMap, HashMap => MMap, Set => MSet}
+	  import scala.io.Source
+	  def getMapFromFile(fileName: String, keyIndex: Int, valueIndex: Int): MMap[String, MSet[String]] = {
+	    val result = new MMap[String, MSet[String]]() with MultiMap[String, String]
+	    for {line <- Source.fromFile(fileName).getLines.drop(1)
+	        val lineTokens = line.split(",")}
+	      result.addBinding(lineTokens(keyIndex), lineTokens(valueIndex))
+	    result
+	  }
+	}
+
+!SLIDE transition=blindY
+# Flatmapping Across Data Collections Example
+
+	// Return a MultiMap of all source IDs for an Account number and MAC address
+	val macsByAccountNumber = getMapFromFile("Accounts-MAC.csv"), 0, 3)
+	val rateCodesByMac = getMapFromFile("MAC-RCs.csv", 0, 1)
+	val bsgHandlesByRateCode = getMapFromFile("RC-BSG.csv", 5, 6)
+	val sourceIdByBsgHandle = getMapFromFile("BSG-SourceId.csv", 2, 4)
+
+	val sourceIdsByAcctAndMac = new MMap[(String, String), MSet[String]]() with MultiMap[(String, String), String]
+	for {
+	    acc <- macsByAccountNumber.keys // for each account
+	  	mac <- macsByAccountNumber.getOrElse(acc, MSet().empty) // for each device, which may be empty
+	  	rc <- rateCodesByMac.get(mac).flatten // for each rate code associated with a device, flattened by device
+	  	bsg <- bsgHandlesByRateCode.get(rc).flatten // for each BSG, flattened by rate code
+	  	src <- sourceIdByBsgHandle.get(bsg).flatten // for each source ID, flattened by BSG
+    } yield sourceIdsByAcctAndMac.addBinding((acc, mac), src)
+
+!SLIDE transition=blindY
+# Credits
+
+* Sources
+	* Fast Track to Scala courseware by Typesafe
+	* Scala in Depth, by Josh Suereth (MEAP)
+	* Wikipedia
+	* Runar Bjarnson's NE Scala 2011 talk
+	* Josh Suereth's NE Scala 2011 talk
+
+* Contributors
+	* Dave Esterkin, Chariot Solutions

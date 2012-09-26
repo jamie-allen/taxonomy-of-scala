@@ -429,3 +429,52 @@ StrangeLoop 2012
 
 * Contributors
 	* Dave Esterkin, Chariot Solutions
+
+*** LOOK AT DSLs IN ACTION APPENDIX A
+
+*** JOSH
+
+Treating monads as "containers" is kind of half the understanding. Monads
+are about *sequencing operations* on the underlying types.
+ 
+Example 1:
+ 
+I want all the classes my students attend. Here you care about students
+and classes, not lists, sets, etc..
+ 
+val students: List[Student] = ...
+val schools = students flatMap (_.classes) to[Set]
+ 
+Example #2:
+I have an asynchronous auth API. If my account authorization succeeds,
+pull the credentials, otherwise pull the guest permissions. Here I care
+about credentials, authorization and Permissions.
+ 
+trait Authentication {
+def validate ( c: Credentials): Future[Authorization]
+def permissions(a: Authorization): Future[Permissions]
+def guest : Future[Authorization]
+}
+ 
+validate(user) flatMap { auth =>
+if(auth. valid) permissions(auth)
+else permissions(guest)
+}
+ 
+Note that in both examples the "context" of the operation is the monad.
+For the first, it's a List of things. We don't really care about the
+list, just accessing the underlying data from that list.
+ 
+In the second, we're sequencing together some logic that happens to be
+asynchronous. The calls happen on some other thread, but we don't care,
+since we're focused on the data.
+ 
+Monads give you a way to lift some aspect of the "context" of your sequence
+of operations away so you can focus on the raw data.
+ 
+For List[A], Future [ A], and others it's rare you care about the future
+part for core logic. It's that "A" that hold magical appeal and the means
+by which we do stuff.
+ 
+Monads give you a syntax to rip down to that A, and ignore the exterior
+context as needed.
